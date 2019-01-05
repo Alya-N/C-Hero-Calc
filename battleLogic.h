@@ -39,6 +39,7 @@ struct TurnData {
     bool ricoActive = false;
     int direct_target = 0;
     int counter_target = 0;
+    int counter_eligible = 1;
     double critMult = 1;
     double hate = 0;
     double leech = 0;
@@ -236,6 +237,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
     turnData.ricoActive = false;
     turnData.aoeReflect = 0;
     turnData.hpPierce = 0;
+    turnData.counter_eligible = 1;
 
     double friendsDamage = 0;
 
@@ -282,6 +284,8 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         // Pick a target, Bubbles currently dampens lux damage if not targeting first according to game code, interaction should be added if this doesn't change
         case LUX:       turnData.direct_target = getLuxTarget(opposingCondition, getTurnSeed(opposingCondition.seed, 99 -turncounter));
                         opposingElement = opposingCondition.lineup[turnData.direct_target]->element;
+                        if (turnData.direct_target > opposingCondition.monstersLost)
+                            turnData.counter_eligible = 0;
                         break;
         case CRIT:      // turnData.critMult *= getTurnSeed(opposingCondition.seed, turncounter) % 2 == 1 ? skillAmounts[monstersLost] : 1;
                         turnData.critMult *= getTurnSeed(opposingCondition.seed, 99 - turncounter) % 2 == 0 ? skillAmounts[monstersLost] : 1;
@@ -412,14 +416,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
       remainingHealths[frontliner] -= opposing.baseDamage;
     }
 
-    // Lee and Fawkes can only counter if they are hit directly, so if they are opposing Lux and Lux
-    // hits another units, they do not counter
-    int counter_eligible = 1;
-    if(skillTypes[monstersLost] == LUX && turnData.direct_target > frontliner) {
-      counter_eligible = 0;
-      // std::cout << "LUX DID NOT HIT FRONTLINER" << std::endl;
-    }
-
     if (opposing.trampleTriggered) {
         for (int i = frontliner + 1; i < armySize; i++)
             if (remainingHealths[i] > 0){
@@ -514,7 +510,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
 
     // Moved reflect functions to the end, reflect is now delayed till after healing and wither occur.
     if (monstersLost < armySize){
-        if (opposing.counter && counter_eligible){
+        if (opposing.counter && turnData.counter_eligible){
             // Finding Guy's target
             if(opposing.guyActive)
                 opposing.counter_target = findMaxHP();
