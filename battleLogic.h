@@ -39,7 +39,7 @@ struct TurnData {
     bool ricoActive = false;
     int direct_target = 0;
     int counter_target = 0;
-    int counter_eligible = 1;
+    bool counter_eligible = true;
     double critMult = 1;
     double hate = 0;
     double leech = 0;
@@ -237,7 +237,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
     turnData.ricoActive = false;
     turnData.aoeReflect = 0;
     turnData.hpPierce = 0;
-    turnData.counter_eligible = 1;
+    turnData.counter_eligible = true;
 
     double friendsDamage = 0;
 
@@ -283,9 +283,10 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
                         break;
         // Pick a target, Bubbles currently dampens lux damage if not targeting first according to game code, interaction should be added if this doesn't change
         case LUX:       turnData.direct_target = getLuxTarget(opposingCondition, getTurnSeed(opposingCondition.seed, 99 -turncounter));
+        std::cout << "Attempt lux" << std::endl;
                         opposingElement = opposingCondition.lineup[turnData.direct_target]->element;
                         if (turnData.direct_target > opposingCondition.monstersLost)
-                            turnData.counter_eligible = 0;
+                            turnData.counter_eligible = false;
                         break;
         case CRIT:      // turnData.critMult *= getTurnSeed(opposingCondition.seed, turncounter) % 2 == 1 ? skillAmounts[monstersLost] : 1;
                         turnData.critMult *= getTurnSeed(opposingCondition.seed, 99 - turncounter) % 2 == 0 ? skillAmounts[monstersLost] : 1;
@@ -716,7 +717,7 @@ int actual_target;
   return actual_target;
 }
 // Simulates One fight between 2 Armies and writes results into left's LastFightData
-inline bool simulateFight(Army & left, Army & right, bool verbose = false) {
+inline bool simulateFight(Army & left, Army & right, bool verbose = true) {
     // left[0] and right[0] are the first monsters to fight
     ArmyCondition leftCondition;
     ArmyCondition rightCondition;
