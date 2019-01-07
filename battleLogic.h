@@ -451,6 +451,8 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
       }
 
       remainingHealths[i] -= opposing.aoeDamage;
+      if (skillTypes[i] == SACRIFICE)
+        remainingHealths[i] -= turnData.masochism;
 
       if (i > frontliner && opposing.valkyrieDamage) { // Aoe that doesnt affect the frontliner
         if (skillTypes[i] == RESISTANCE)
@@ -483,8 +485,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             remainingHealths[i] += turnData.healing;
             if (skillTypes[i] != SACRIFICE)
                 remainingHealths[i] += turnData.sacHeal;//Prevent sacrifice from working on the unit that sacrifices their health
-            else
-                remainingHealths[i] -= turnData.masochism;//Deal damage to Kedari here so counting alive units works for Lux.
             if (remainingHealths[i] > maxHealths[i]) { // Avoid overhealing
                 remainingHealths[i] = maxHealths[i];
         }
