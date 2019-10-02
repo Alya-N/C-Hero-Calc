@@ -266,10 +266,10 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
                                     cooldown = 6;
                                     break;
                                 case LEGENDARY:
-                                    cooldown = 8;
+                                    cooldown = 7;
                                     break;
                                 case ASCENDED:
-                                    cooldown = 9;
+                                    cooldown = 8;
                                     break;
                             }
                             if ((turncounter + 1) % cooldown == 1 && turncounter != 0)

@@ -783,8 +783,8 @@ void initBaseHeroes() {
     baseHeroes.push_back(Monster(144,126, "retia",              WATER, ASCENDED,  {BLOODLUST,      AIR,  AIR,   350}, 246, 318, 338, 100));
     baseHeroes.push_back(Monster( 48,  4, "newt",               WATER, COMMON,    {FURY,           AIR,  AIR,   2}, 14, 1, 4, 0.5));
     baseHeroes.push_back(Monster( 58,  6, "electra",            AIR,   RARE,      {FURY,           AIR,  AIR,   3}, 30, 4, 8, 1));
-    baseHeroes.push_back(Monster( 72,  3, "boson",              FIRE,  LEGENDARY, {FURY,           AIR,  AIR,   3}, 181, 19, 21, 1));
-    baseHeroes.push_back(Monster(214,  7, "higgs",              FIRE,  ASCENDED,  {FURY,           AIR,  AIR,   4}, 301, 14, 30, 1));
+    baseHeroes.push_back(Monster( 72,  3, "boson",              FIRE,  LEGENDARY, {FURY,           AIR,  AIR,   4}, 181, 19, 21, 1));
+    baseHeroes.push_back(Monster(214,  7, "higgs",              FIRE,  ASCENDED,  {FURY,           AIR,  AIR,   5}, 301, 14, 30, 1));
 }
 
 void initIndices() {
