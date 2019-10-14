@@ -241,6 +241,11 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
             case LIFESTEAL: turnData.aoeDamage += (int) skillAmounts[i];
                             turnData.healing += (int) skillAmounts[i];
                             break;
+            case WBIDEAL:   turnData.aoeDamage  += (int) skillAmounts[i];
+                            turnData.healing    += (int) skillAmounts[i];
+                            turnData.buffDamage += (int) skillAmounts[i];
+                            turnData.protection += (int) skillAmounts[i];
+                            break;
             case DAMPEN:    turnData.dampFactor *= skillAmounts[i];
                             break;
             case ABSORB:    if (i != monstersLost) turnData.absorbMult += skillAmounts[i];

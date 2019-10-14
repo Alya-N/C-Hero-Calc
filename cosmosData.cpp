@@ -117,6 +117,9 @@ Monster::Monster(const Monster & baseHero, int aLevel, int aPromo) :
         case LIFESTEAL_L:   this->skill.skillType = LIFESTEAL;
                             this->skill.amount = (double) floor((double) aLevel * this->skill.amount);
                             break;
+        case WBIDEAL_L:     this->skill.skillType = WBIDEAL;
+                            this->skill.amount = (double) floor((double) aLevel * this->skill.amount);
+                            break;
         case DAMPEN_L:      this->skill.skillType = DAMPEN;
                             this->skill.amount = 1.0f - (double) aLevel * this->skill.amount;
                             break;
@@ -166,8 +169,9 @@ HeroSkill::HeroSkill(SkillType aType, Element aTarget, Element aSource, double a
                               aType == TRIPLE || aType == HPAMPLIFY);
     this->hasHeal = (aType == HEAL || aType == HEAL_L ||
                      aType == LIFESTEAL || aType == LIFESTEAL_L ||
+                     aType == WBIDEAL   || aType == WBIDEAL_L   ||
                      aType == SACRIFICE || aType == SACRIFICE_L ||
-                     aType == DEATHBUFF || aType == HEALFIRST ||
+                     aType == DEATHBUFF || aType == HEALFIRST   ||
                      aType == FLATHEAL  || aType == BLOODLUST);
     // hasAoe should include all things affected by dampen
     this->hasAoe = (aType == AOE || aType == AOE_L ||
@@ -183,6 +187,7 @@ HeroSkill::HeroSkill(SkillType aType, Element aTarget, Element aSource, double a
                                   aType == AOE || aType == AOE_L ||
                                   aType == HEAL || aType == HEAL_L ||
                                   aType == LIFESTEAL || aType == LIFESTEAL_L ||
+                                  aType == WBIDEAL   || aType == WBIDEAL_L   ||
                                   aType == BEER || aType == AOEZERO_L ||
                                   aType == AOEZERO || aType == ABSORB ||
                                   aType == SACRIFICE || aType == SACRIFICE_L ||
@@ -387,6 +392,8 @@ std::map<std::string, int> stringToEnum = {
     {"HPAMPLIFY", HPAMPLIFY},
     {"FURY", FURY},
     {"BLOODLUST", BLOODLUST},
+    {"WBIDEAL", WBIDEAL},
+    {"WBIDEAL_L", WBIDEAL_L},
     {"BULLSHIT", BULLSHIT},
 
     {"EARTH", EARTH},
