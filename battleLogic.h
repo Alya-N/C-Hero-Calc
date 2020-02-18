@@ -595,11 +595,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
     // Check for revive here, only works if killed by direct hit. If revived, applies later after aoe
     if (passiveTypes[frontliner] == ANGEL && remainingHealths[frontliner] <= 0){
         angelActive = true;
-        for (int i = armySize - 1; i > frontliner; i--)
-            if (remainingHealths[i] > 0 || worldboss){ //Check if the frontliner is alone.
-                angelActive = false;
-                break;
-            }
     }
 
     // Lee and Fawkes can only counter if they are hit directly, so if they are opposing Lux and Lux
