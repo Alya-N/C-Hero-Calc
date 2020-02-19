@@ -586,16 +586,10 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
     int armoredRicochetValue; //So the ricochet doesn't heal due to armor
     double tempResistance; //Needed for frosty to dampen ricochet
     int aoeConst = 0; //AoE that is not affected by SKILLDAMPEN
-    bool angelActive = false; //Saves from dying a second time to non-delayed AoE
 
     // Apply normal attack damage to the frontliner
     // If direct_target is non-zero that means Lux is hitting something not the front liner
     remainingHealths[frontliner + opposing.direct_target] -= opposing.baseDamage;
-
-    // Check for revive here, only works if killed by direct hit. If revived, applies later after aoe
-    if (passiveTypes[frontliner] == ANGEL && remainingHealths[frontliner] <= 0){
-        angelActive = true;
-    }
 
     // Lee and Fawkes can only counter if they are hit directly, so if they are opposing Lux and Lux
     // hits another units, they do not counter
@@ -787,9 +781,9 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
       }
 
 //Check for death defying skills, death and death skills.
-    if (i == frontliner && angelActive){
-        remainingHealths[frontliner] = round((double)maxHealths[frontliner] * passiveAmounts[frontliner]);
-        passiveTypes[frontliner] = NONE;
+    if (passiveTypes[i] == ANGEL && remainingHealths[i] <= 0){
+        remainingHealths[i] = round((double)maxHealths[i] * passiveAmounts[i]);
+        passiveTypes[i] = NONE;
     }
 
       if (remainingHealths[i] <= 0 && !worldboss) {

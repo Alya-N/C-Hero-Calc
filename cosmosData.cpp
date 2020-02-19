@@ -93,12 +93,13 @@ Monster::Monster(const Monster & baseHero, int aLevel, int aPromo) :
 {
     this->index = baseHero.index;
 
-    if (aPromo != 6){
+//Check for promo 6 is here, so it isn't overwritten with the default passive upon base hero creation.
+    if (aPromo < 6){
         this->passive.passiveType = NONE;
         this->passive.amount = 0;
-        if (this->passive.passiveType == TANK)
-            this->hp *= 1 + this->passive.amount;
     }
+    if (this->passive.passiveType == TANK)
+        this->hp *= 1 + this->passive.amount;
 
 //Put aSeethe skill back where it belongs once it's capped to 99
     if (this->skill.skillType == POSBONUS_L) {
