@@ -781,7 +781,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
       }
 
 //Check for death defying skills, death and death skills.
-    if (passiveTypes[i] == ANGEL && remainingHealths[i] <= 0){
+    if (passiveTypes[i] == ANGEL && remainingHealths[i] <= 0 && turnData.aliveAtTurnStart[i]){
         remainingHealths[i] = round((double)maxHealths[i] * passiveAmounts[i]);
         passiveTypes[i] = NONE;
     }
@@ -856,7 +856,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             if(opposing.guyActive)
                 opposing.counter_target = findMaxHP();
             // Add opposing.counter_target to handle fawkes not targetting the frontliner
-            remainingHealths[monstersLost + opposing.counter_target] -= static_cast<int64_t>(ceil(turnData.baseDamage * opposing.counter));
+            remainingHealths[monstersLost + opposing.counter_target] -= static_cast<int64_t>(round(turnData.baseDamage * opposing.counter));
         }
         if (opposing.flatRef && counter_eligible){
             remainingHealths[monstersLost] -= opposing.flatRef;
