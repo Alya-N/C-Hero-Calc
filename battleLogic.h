@@ -12,7 +12,9 @@ const int VALID_RAINBOW_CONDITION = 15; // Binary 00001111 -> means all elements
 // Struct keeping track of everything that is only valid for one turn
 struct TurnData {
     int64_t baseDamage = 0;
+    int64_t evolve = 0;
     double multiplier = 1;
+    double witchMult = 1;
 
     int buffDamage = 0;
     int protection = 0;
@@ -57,7 +59,6 @@ struct TurnData {
     bool ricoActive = false;
     int direct_target = 0;
     int counter_target = 0;
-    double critMult = 1;
     double hate = 0;
     double leech = 0;
     double selfHeal = 0;
@@ -220,6 +221,7 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
     turnData.deathBuffHP = 0;
     turnData.healFirst = 0;
     turnData.multiplier = 1;
+    turnData.witchMult = 1;
     turnData.immunity5K = false ;
     turnData.turnDamp = turncounter ? false : true; //is it the first turn?
 
@@ -252,7 +254,8 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
             case BUFF:      if (skillTargets[i] == ALL || skillTargets[i] == lineup[monstersLost]->element) {
                                 turnData.buffDamage += (int) skillAmounts[i];
                             } break;
-            case BUFFUP:    turnData.buffDamage += (int) (skillAmounts[i] * floor(turncounter / (lineup[i]->promo >= 5 ? 5 : 4)));//TODO: Change to 3 when it's fixed
+            case BUFFUP:    if (turncounter % (lineup[i]->promo >= 5 ? 5 : 4) == 0 && turncounter != 0)//TODO: Change 5 to 3 when it's fixed
+                                deathBuffATK += skillAmounts[i];
                             break;
             case CHAMPION:  if (skillTargets[i] == ALL || skillTargets[i] == lineup[monstersLost]->element) {
                                 turnData.buffDamage += (int) skillAmounts[i];
@@ -292,6 +295,7 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
             case HEALFIRST: turnData.healFirst += (int) skillAmounts[i];
                             break;
             case PERCBUFF:  turnData.multiplier += skillAmounts[i];
+                            turnData.witchMult += skillAmounts[i];
                             break;
             case FURY:      int cooldown;
                             switch (lineup[i]->rarity) {
@@ -313,11 +317,18 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
                                 furyArray[i] = round((double)furyArray[i] * skillAmounts[i]);
                             break;
             case MORALE:    if (turncounter % 2 == 1){
-                                int statBuff = skillAmounts[i] * (i - monstersLost);
-                                remainingHealths[i] += statBuff;
-                                maxHealths[i] += statBuff;
-                                furyArray[i] += statBuff;
-                        }
+                                int statBuff = 0;
+                                for (int j = monstersLost; j < i ; j++){
+                                    if (turnData.aliveAtTurnStart[j])
+                                        statBuff++;
+                                }
+                                if (statBuff){
+                                    statBuff *= skillAmounts[i];
+                                    remainingHealths[i] += statBuff;
+                                    maxHealths[i] += statBuff;
+                                    furyArray[i] += statBuff;
+                                }
+                            }
                             break;
         }
     }
@@ -329,7 +340,7 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
 // Protection needs to be calculated at this point.
 inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition & opposingCondition) {
 
-    turnData.baseDamage = lineup[monstersLost]->damage + deathBuffATK + evolveTotal; // Get Base damage (deathBuff from Fairies, evolveTotal for Clio/Gladiator buff)
+    turnData.baseDamage = lineup[monstersLost]->damage;
 
     turnData.opposingElement = opposingCondition.lineup[opposingCondition.monstersLost]->element;
     const int opposingProtection = opposingCondition.turnData.protection;
@@ -347,7 +358,6 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
     turnData.valkyrieMult = 0;
     turnData.trampleMult = 0;
     turnData.tripleMult = 0;
-    turnData.critMult = 1; // same as above
     turnData.hate = 0; // same as above
     turnData.counter = 0;
     turnData.flatRef = 0;
@@ -364,6 +374,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
     turnData.tetrisMult = 0;
     turnData.tetrisSeed = 0;
     turnData.bloodlust = 0;
+    turnData.evolve = 0;
 
     // double friendsDamage = 0;
 
@@ -373,10 +384,10 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
                                 turnData.baseDamage *= skillAmounts[monstersLost];
                         }
                         break;
-        case TRAINING:  turnData.buffDamage += (int) (skillAmounts[monstersLost] * (double) turncounter);
+        case TRAINING:  turnData.baseDamage += (int) (skillAmounts[monstersLost] * (double) turncounter);
                         break;
         case RAINBOW:   if (rainbowConditions[monstersLost]) {
-                            turnData.buffDamage += (int) skillAmounts[monstersLost];
+                            turnData.baseDamage += (int) skillAmounts[monstersLost];
                         } break;
         case ADAPT:     if (turnData.opposingElement == skillTargets[monstersLost]) {
                             turnData.multiplier *= skillAmounts[monstersLost];
@@ -422,8 +433,6 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
                         break;
         case SELFHEAL:  turnData.selfHeal = skillAmounts[monstersLost];
                         break;
-        case EVOLVE:    evolveTotal += round(opposingDamage * skillAmounts[monstersLost]);
-                        break;
         case COUNTER_MAX_HP: turnData.counter = skillAmounts[monstersLost];
                         turnData.guyActive = true;
                         break;
@@ -452,7 +461,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         case BULLSHIT:  turnData.tetrisSeed = getTurnSeed(opposingCondition.seed, 99 - turncounter) % 6;
                         turnData.tetrisMult = skillAmounts[monstersLost];
                         turnData.ricoActive = true;
-                        turnData.tetrisDamage = (turnData.baseDamage + turnData.buffDamage) * turnData.tetrisMult * turnData.multiplier;
+                        turnData.tetrisDamage = (turnData.baseDamage + turnData.buffDamage + deathBuffATK + evolveTotal) * turnData.tetrisMult * turnData.multiplier;
                         //Frontliner part goes here for more accurate damage.
                         switch(turnData.tetrisSeed){
                             case 0: turnData.multiplier *= 2 * turnData.tetrisMult;
@@ -487,11 +496,22 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
 
     }
 
-    turnData.valkyrieDamage = turnData.baseDamage;
-    //Linear before multiplicative
+    //Linear buffs
+    turnData.valkyrieDamage = turnData.baseDamage + deathBuffATK + evolveTotal;// Get Base damage (deathBuff from Fairies, evolveTotal for Clio/Gladiator buff)
+
     if (turnData.buffDamage != 0) {
         turnData.valkyrieDamage += round(turnData.buffDamage * (passiveTypes[monstersLost] == DAMAGE ? (1 + passiveAmounts[monstersLost]) : 1));
     }
+
+    //Multiplicative buffs
+    if (passiveTypes[monstersLost] == DPS) {
+        turnData.valkyrieDamage *= 1 + passiveAmounts[monstersLost];
+    }
+
+    if (opposingCondition.skillTypes[opposingCondition.monstersLost] == EVOLVE){
+        turnData.evolve = round(turnData.valkyrieDamage * turnData.witchMult * opposingCondition.skillAmounts[opposingCondition.monstersLost]);//Has to be here for Clio.
+    }
+
     if (turnData.multiplier > 1) {
         turnData.valkyrieDamage *= turnData.multiplier;
     }
@@ -500,21 +520,21 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         turnData.valkyrieDamage *= elementalBoost + turnData.hate;
     }
 
-    if (passiveTypes[monstersLost] == DPS) {
-        turnData.valkyrieDamage *= 1 + passiveAmounts[monstersLost];
-    }
+    //Save full damage value so it is not affected by armor and absorb and other individual unit abilities.
+    double ricoValue = turnData.valkyrieDamage;
 
-    double ricoValue = turnData.valkyrieDamage; //Save it so it is not affected by armor and absorb and other individual unit abilities.
-
+    //Unique linear buff that happens independant of other buffs
     if (turnData.hpPierce)
         turnData.valkyrieDamage += turnData.hpPierce;
 
+    //Multiplicative debuffs
     if (opposingResistance < 1)
         turnData.valkyrieDamage *= opposingResistance;
 
     if (opposingCondition.passiveTypes[opposingCondition.monstersLost] == AFFINITY && turnData.opposingElement == lineup[monstersLost]->element)
         turnData.valkyrieDamage *= 1 - opposingCondition.passiveAmounts[opposingCondition.monstersLost];
 
+    //Linear debuffs
     if (turnData.valkyrieDamage > opposingProtection) { 
         turnData.valkyrieDamage -= (double) opposingProtection;
     } else {
@@ -541,7 +561,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         // turnData.baseDamage = castCeil(turnData.valkyrieDamage);
         turnData.baseDamage = round(turnData.valkyrieDamage);
 
-    turnData.valkyrieDamage = ricoValue;
+    turnData.valkyrieDamage = ricoValue;//Damage for ricochet skill.
 
     // Handle enemy dampen ability and reduce aoe effects
     if (opposingDampFactor < 1) {
@@ -558,6 +578,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         turnData.tripleMult *= opposingDampFactor;
     }
 
+    //Damage negation (used by Doyenne WB)
     if( opposingImmunityDamage && (turnData.valkyrieDamage >= opposingImmunityValue || turnData.baseDamage >= opposingImmunityValue ) ) {
         turnData.valkyrieDamage = 0 ;
         turnData.baseDamage = 0 ;
@@ -812,8 +833,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
                         remainingHealths[j] += turnData.deathBuffHP;
                         maxHealths[j] += turnData.deathBuffHP;
                     }
-                for (int j = monstersLost; j < armySize; j++)
-                    furyArray[j] += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
                 deathBuffATK += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
                 break;
             default:
@@ -861,10 +880,12 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
         if (opposing.flatRef && counter_eligible){
             remainingHealths[monstersLost] -= opposing.flatRef;
         }
-        //Gladiator buff
-        if(turnData.bloodlust && remainingHealths[monstersLost] > 0){
+        //Clio buff
+        if(opposing.evolve && remainingHealths[frontliner] > 0){
+            evolveTotal += opposing.evolve;
+        } //Gladiator buff
+        else if(turnData.bloodlust && remainingHealths[monstersLost] > 0){
             evolveTotal += turnData.bloodlust;
-            furyArray[monstersLost] += turnData.bloodlust;
             maxHealths[monstersLost] += turnData.bloodlust;
             remainingHealths[monstersLost] += turnData.bloodlust;
         }
@@ -896,8 +917,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
                                 remainingHealths[j] += turnData.deathBuffHP;
                                 maxHealths[j] += turnData.deathBuffHP;
                             }
-                        for (int j = monstersLost; j < armySize; j++)
-                            furyArray[j] += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
                         deathBuffATK += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
                     default:
                         break;
@@ -945,8 +964,6 @@ inline void ArmyCondition::resolveRevenge(TurnData & opposing) {
                                 remainingHealths[j] += turnData.deathBuffHP;
                                 maxHealths[j] += turnData.deathBuffHP;
                             }
-                        for (int j = monstersLost; j < armySize; j++)
-                            furyArray[j] += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
                         deathBuffATK += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
                     default:
                         break;
