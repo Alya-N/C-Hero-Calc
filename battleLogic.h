@@ -395,7 +395,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         case BERSERK:   if (lastBerserk)
                             turnData.valkyrieDamage = round((double)lastBerserk * skillAmounts[monstersLost]);
                         else
-                            turnData.valkyrieDamage = turnData.baseDamage;
+                            turnData.valkyrieDamage = turnData.baseDamage + deathBuffATK + evolveTotal;
                         if (turnData.valkyrieDamage >= std::numeric_limits<int>::max())
                             turnData.baseDamage = static_cast<DamageType>(ceil(turnData.valkyrieDamage));
                         else
@@ -450,8 +450,8 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         case VOID:      if (lineup[monstersLost]->element != turnData.opposingElement)
                             turnData.multiplier *= skillAmounts[monstersLost] + 1;
                         break;
-        case SADISM:    turnData.sadism += round(skillAmounts[monstersLost] * (turnData.baseDamage - evolveTotal));
-                        turnData.aoeDamage += round(skillAmounts[monstersLost] * (turnData.baseDamage - evolveTotal));
+        case SADISM:    turnData.sadism += round(skillAmounts[monstersLost] * (turnData.baseDamage + deathBuffATK));
+                        turnData.aoeDamage += round(skillAmounts[monstersLost] * (turnData.baseDamage + deathBuffATK));
                         break;
         case COURAGE:   turnData.buffDamage *= skillAmounts[monstersLost];
                         break;
@@ -808,11 +808,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
     }
 
       if (remainingHealths[i] <= 0 && !worldboss) {
-        if (i == monstersLost) {
-          monstersLost++;
-          lastBerserk = 0;
-          evolveTotal = 0;
-        }
         //Save revenge values
         switch (skillTypes[i]) {
             case REVENGE:
@@ -833,10 +828,15 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
                         remainingHealths[j] += turnData.deathBuffHP;
                         maxHealths[j] += turnData.deathBuffHP;
                     }
-                deathBuffATK += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
+                deathBuffATK += turnData.deathBuffHP - (i == monstersLost ? evolveTotal : 0);
                 break;
             default:
                 break;
+        }
+        if (i == monstersLost) { //moved after revenge skills so attack buff from fairies is not affected by Gladiators or Yeti.
+          monstersLost++;
+          lastBerserk = 0;
+          evolveTotal = 0;
         }
         skillTypes[i] = NOTHING; // disable dead hero's ability
       } else {
@@ -892,11 +892,6 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
         //If a delayed ability killed a frontliner, find next frontliner. Same procedure as when applying aoe.
         for (int i = monstersLost; i < armySize; i++){
             if (remainingHealths[i] <= 0 && !worldboss) {
-                if (i == monstersLost) {
-                    monstersLost++;
-                    lastBerserk = 0;
-                    evolveTotal = 0;
-                }
                 //Save revenge values
                 switch (skillTypes[i]) {
                     case REVENGE:
@@ -917,9 +912,14 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
                                 remainingHealths[j] += turnData.deathBuffHP;
                                 maxHealths[j] += turnData.deathBuffHP;
                             }
-                        deathBuffATK += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
+                        deathBuffATK += turnData.deathBuffHP - (i == monstersLost ? evolveTotal : 0);
                     default:
                         break;
+                }
+                if (i == monstersLost) { //moved after revenge skills so attack buff from fairies is not affected by Gladiators or Yeti.
+                    monstersLost++;
+                    lastBerserk = 0;
+                    evolveTotal = 0;
                 }
                 skillTypes[i] = NOTHING; // disable dead hero's ability
             }
@@ -939,11 +939,6 @@ inline void ArmyCondition::resolveRevenge(TurnData & opposing) {
             remainingHealths[i] -= opposing.aoeRevenge;
             //Check for dead units
             if (remainingHealths[i] <= 0 && !worldboss) {
-                if (i == monstersLost) {
-                    monstersLost++;
-                    lastBerserk = 0;
-                    evolveTotal = 0;
-                }
                 //Save Revenge values
                 switch (skillTypes[i]) {
                     case REVENGE:
@@ -964,9 +959,14 @@ inline void ArmyCondition::resolveRevenge(TurnData & opposing) {
                                 remainingHealths[j] += turnData.deathBuffHP;
                                 maxHealths[j] += turnData.deathBuffHP;
                             }
-                        deathBuffATK += (int) round(skillAmounts[i] * (lineup[i]->damage + deathBuffATK));
+                        deathBuffATK += turnData.deathBuffHP - (i == monstersLost ? evolveTotal : 0);
                     default:
                         break;
+                }
+                if (i == monstersLost) { //moved after revenge skills so attack buff from fairies is not affected by Gladiators or Yeti.
+                    monstersLost++;
+                    lastBerserk = 0;
+                    evolveTotal = 0;
                 }
                 skillTypes[i] = NOTHING; // disable dead hero's ability
             }
