@@ -64,7 +64,7 @@ struct TurnData {
     double selfHeal = 0;
     double execute = 0;
     bool immunity5K = false ;
-    bool turnDamp = false ;
+    int turnCount = 0;
 };
 
 // Keep track of an army's condition during a fight and save some convenience data
@@ -223,13 +223,13 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
     turnData.multiplier = 1;
     turnData.witchMult = 1;
     turnData.immunity5K = false ;
-    turnData.turnDamp = turncounter ? false : true; //is it the first turn?
+    turnData.turnCount = turncounter; //for Yeti and Mary
 
     switch (skillTypes[monstersLost]) {
         default:            break;
         case RESISTANCE:    turnData.resistance = 1 - skillAmounts[monstersLost];//Needs to be here so it happens before Neil's absorb.
                             break;
-        case TURNDAMP:      if (turnData.turnDamp)
+        case TURNDAMP:      if (turncounter == 0)
                             turnData.resistance = 1 - skillAmounts[monstersLost];
                             break;
         case SKILLDAMPEN:   turnData.skillDampen = 1 - skillAmounts[monstersLost];
@@ -340,14 +340,13 @@ inline void ArmyCondition::startNewTurn(const int turncounter) {
 // Protection needs to be calculated at this point.
 inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition & opposingCondition) {
 
-    turnData.baseDamage = lineup[monstersLost]->damage;
+    turnData.baseDamage = lineup[monstersLost]->damage + deathBuffATK + evolveTotal;// Get Base damage (deathBuff from Fairies, evolveTotal for Clio/Gladiator buff)
 
     turnData.opposingElement = opposingCondition.lineup[opposingCondition.monstersLost]->element;
     const int opposingProtection = opposingCondition.turnData.protection;
     const double opposingDampFactor = opposingCondition.turnData.dampFactor;
     const double opposingAbsorbMult = opposingCondition.turnData.absorbMult;
     const bool opposingImmunityDamage = opposingCondition.turnData.immunity5K;
-    const double opposingDamage = opposingCondition.furyArray[opposingCondition.monstersLost];
     const double opposingResistance = opposingCondition.turnData.resistance;
     const double opposingSkillDampen = opposingCondition.turnData.skillDampen;
     const int opposingImmunityValue = opposingCondition.turnData.immunityValue;
@@ -379,10 +378,12 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
     // double friendsDamage = 0;
 
     switch (skillTypes[monstersLost]) {
-        case FRIENDS:   for (int i = monstersLost + 1; i < armySize; i++) {
+        case FRIENDS:   turnData.baseDamage = lineup[monstersLost]->damage;
+                        for (int i = monstersLost + 1; i < armySize; i++) {
                             if (skillTypes[i] == NOTHING && remainingHealths[i] > 0)
                                 turnData.baseDamage *= skillAmounts[monstersLost];
                         }
+						turnData.baseDamage += deathBuffATK + evolveTotal;
                         break;
         case TRAINING:  turnData.baseDamage += (int) (skillAmounts[monstersLost] * (double) turncounter);
                         break;
@@ -395,7 +396,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         case BERSERK:   if (lastBerserk)
                             turnData.valkyrieDamage = round((double)lastBerserk * skillAmounts[monstersLost]);
                         else
-                            turnData.valkyrieDamage = turnData.baseDamage + deathBuffATK + evolveTotal;
+                            turnData.valkyrieDamage = turnData.baseDamage;
                         if (turnData.valkyrieDamage >= std::numeric_limits<int>::max())
                             turnData.baseDamage = static_cast<DamageType>(ceil(turnData.valkyrieDamage));
                         else
@@ -450,8 +451,8 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         case VOID:      if (lineup[monstersLost]->element != turnData.opposingElement)
                             turnData.multiplier *= skillAmounts[monstersLost] + 1;
                         break;
-        case SADISM:    turnData.sadism += round(skillAmounts[monstersLost] * (turnData.baseDamage + deathBuffATK));
-                        turnData.aoeDamage += round(skillAmounts[monstersLost] * (turnData.baseDamage + deathBuffATK));
+        case SADISM:    turnData.sadism += round(skillAmounts[monstersLost] * (turnData.baseDamage - evolveTotal));
+                        turnData.aoeDamage += round(skillAmounts[monstersLost] * (turnData.baseDamage - evolveTotal));
                         break;
         case COURAGE:   turnData.buffDamage *= skillAmounts[monstersLost];
                         break;
@@ -461,7 +462,7 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
         case BULLSHIT:  turnData.tetrisSeed = getTurnSeed(opposingCondition.seed, 99 - turncounter) % 6;
                         turnData.tetrisMult = skillAmounts[monstersLost];
                         turnData.ricoActive = true;
-                        turnData.tetrisDamage = (turnData.baseDamage + turnData.buffDamage + deathBuffATK + evolveTotal) * turnData.tetrisMult * turnData.multiplier;
+                        turnData.tetrisDamage = (turnData.baseDamage + turnData.buffDamage) * turnData.tetrisMult * turnData.multiplier;
                         //Frontliner part goes here for more accurate damage.
                         switch(turnData.tetrisSeed){
                             case 0: turnData.multiplier *= 2 * turnData.tetrisMult;
@@ -486,19 +487,19 @@ inline void ArmyCondition::getDamage(const int turncounter, const ArmyCondition 
                         break;
         case CONVERT:   turnData.baseDamage -= round(lineup[monstersLost]->damage * (7 - armySize + monstersLost) * 0.1);
                         break;
-        case FURY:      turnData.baseDamage = furyArray[monstersLost];
+        case FURY:      turnData.baseDamage = furyArray[monstersLost] + deathBuffATK + evolveTotal;
                         break;
         case BLOODLUST: turnData.bloodlust += skillAmounts[monstersLost];
                         break;
-        case MORALE:    turnData.baseDamage = furyArray[monstersLost];
+        case MORALE:    turnData.baseDamage = furyArray[monstersLost] + deathBuffATK + evolveTotal;
                         break;
         default:        break;
 
     }
 
-    //Linear buffs
-    turnData.valkyrieDamage = turnData.baseDamage + deathBuffATK + evolveTotal;// Get Base damage (deathBuff from Fairies, evolveTotal for Clio/Gladiator buff)
+    turnData.valkyrieDamage = turnData.baseDamage;
 
+    //Linear buffs
     if (turnData.buffDamage != 0) {
         turnData.valkyrieDamage += round(turnData.buffDamage * (passiveTypes[monstersLost] == DAMAGE ? (1 + passiveAmounts[monstersLost]) : 1));
     }
@@ -630,7 +631,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
     if (opposing.trampleTriggered) {
         for (int i = frontliner + 1; i < armySize; i++)
             if (remainingHealths[i] > 0){
-                if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                     tempResistance = 1 - skillAmounts[i];
                 else
                     tempResistance = 1;
@@ -647,7 +648,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
         double baseMult = opposing.tripleMult;
         for (int i = frontliner + 1; i < armySize; i++)
             if (remainingHealths[i] > 0){
-                if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                     tempResistance = 1 - skillAmounts[i];
                 else
                     tempResistance = 1;
@@ -674,7 +675,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             case 1: times = 3;
                     for (int i = frontliner + 1; i < armySize; i++)
                         if (remainingHealths[i] > 0){
-                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                                 tempResistance = 1 - skillAmounts[i];
                             else
                                 tempResistance = 1;
@@ -690,7 +691,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             //Only one unit behind the frontliner
             case 2: for (int i = frontliner + 1; i < armySize; i++)
                         if (remainingHealths[i] > 0){
-                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                                 tempResistance = 1 - skillAmounts[i];
                             else
                                 tempResistance = 1;
@@ -703,7 +704,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             //Only one unit behind the frontliner
             case 3: for (int i = frontliner + 1; i < armySize; i++)
                         if (remainingHealths[i] > 0){
-                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                                 tempResistance = 1 - skillAmounts[i];
                             else
                                 tempResistance = 1;
@@ -717,7 +718,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             case 4: times = 1;
                     for (int i = frontliner + 1; i < armySize; i++)
                         if (remainingHealths[i] > 0){
-                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                                 tempResistance = 1 - skillAmounts[i];
                             else
                                 tempResistance = 1;
@@ -733,7 +734,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
             //Only one unit behind the frontliner
             case 5: for (int i = frontliner + 1; i < armySize; i++)
                         if (remainingHealths[i] > 0){
-                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+                            if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
                                 tempResistance = 1 - skillAmounts[i];
                             else
                                 tempResistance = 1;
@@ -789,7 +790,7 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
 
       if (i > frontliner){
         if (opposing.valkyrieDamage) { // Aoe that doesnt affect the frontliner
-          if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnDamp))
+          if (skillTypes[i] == RESISTANCE || (skillTypes[i] == TURNDAMP && turnData.turnCount == 0))
               tempResistance = 1 - skillAmounts[i];
           else
               tempResistance = 1;
@@ -815,6 +816,10 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
                 break;
             case DEATHSTRIKE:
                 turnData.deathstrikeDamage += skillAmounts[i];
+                break;
+            case BUFFUP:
+                if ((turnData.turnCount + 1) % (lineup[i]->promo >= 5 ? 5 : 4) == 0)
+                    deathBuffATK += skillAmounts[i];
                 break;
             case DEATHBUFF:
                 turnData.deathBuffHP = (int) round(skillAmounts[i] * maxHealths[i]);
@@ -900,6 +905,10 @@ inline void ArmyCondition::resolveDamage(TurnData & opposing) {
                     case DEATHSTRIKE:
                         turnData.deathstrikeDamage += skillAmounts[i];
                         break;
+                    case BUFFUP:
+                        if ((turnData.turnCount + 1) % (lineup[i]->promo >= 5 ? 5 : 4) == 0)
+                            deathBuffATK += skillAmounts[i];
+                        break;
                     case DEATHBUFF:
                         turnData.deathBuffHP = (int) round(skillAmounts[i] * maxHealths[i]);
                         for (int j = monstersLost; j < i; j++)
@@ -946,6 +955,10 @@ inline void ArmyCondition::resolveRevenge(TurnData & opposing) {
                         break;
                     case DEATHSTRIKE:
                         turnData.deathstrikeDamage += skillAmounts[i];
+                        break;
+                    case BUFFUP:
+                        if ((turnData.turnCount + 1) % (lineup[i]->promo >= 5 ? 5 : 4) == 0)
+                            deathBuffATK += skillAmounts[i];
                         break;
                     case DEATHBUFF:
                         turnData.deathBuffHP = (int) round(skillAmounts[i] * maxHealths[i]);
