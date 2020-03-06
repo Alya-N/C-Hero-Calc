@@ -867,8 +867,10 @@ void initBaseHeroes() {
     baseHeroes.push_back(Monster( 32, 48, "yisus",              EARTH, RARE,      {FLATLEP_L,      EARTH,EARTH, 3}, 38, 18, 34, 1, {DPS, 0.1}));
     baseHeroes.push_back(Monster( 32, 40, "galla",              FIRE,  COMMON,    {AOELOW_L,       FIRE, FIRE,  1}, 30, 22, 22, 0.5, {AFFINITY, 0.05}));
     baseHeroes.push_back(Monster( 58, 58, "yetithepostman",     WATER, RARE,      {BUFFUP_L,       WATER,WATER, 4}, 40, 40, 40, 1, {TANK, 0.1}));
-    baseHeroes.push_back(Monster( 74, 74, "hans",               EARTH, LEGENDARY, {MORALE_L,        EARTH,EARTH, 3}, 200, 200, 180, 2, {DAMAGE, 0.24}));
-    baseHeroes.push_back(Monster(  5,250, "mechamary",          AIR,   ASCENDED,  {TURNDAMP_L,        AIR,  AIR,   0.08}, 12, 1080, 30, 0.01, {ARMOR, 0.3}));
+    baseHeroes.push_back(Monster( 74, 74, "hans",               EARTH, LEGENDARY, {MORALE_L,       EARTH,EARTH, 3}, 200, 200, 180, 2, {DAMAGE, 0.24}));
+    baseHeroes.push_back(Monster(  5,250, "mechamary",          AIR,   ASCENDED,  {TURNDAMP_L,     AIR,  AIR,   0.08}, 12, 1080, 30, 0.01, {ARMOR, 0.3}));
+    baseHeroes.push_back(Monster( 58, 58, "annie",              WATER, LEGENDARY, {TURNDAMP_L,     WATER,WATER, 0.04}, 68, 68, 112, 0.01, {ARMOR, 0.2}));
+    baseHeroes.push_back(Monster( 25, 75, "kilkenny",           FIRE,  LEGENDARY, {BEER,           ALL,  EARTH, 0}, 13, 59, 13, 1, {ANTIMAGIC, 0.15}));
 }
 
 void initIndices() {
