@@ -691,7 +691,7 @@ void initBaseHeroes() {
     baseHeroes.push_back(Monster(100, 20, "tr0n1x",             FIRE,  LEGENDARY, {AOE,           ALL, FIRE, 3}, 107, 44, 35, 6, {ANTIMAGIC, 0.15}));
     baseHeroes.push_back(Monster( 58,  8, "aquortis",           WATER, COMMON,    {BUFF,          WATER, WATER, 3}, 28, 18, 18, 3, {DAMAGE, 0.05}));
     baseHeroes.push_back(Monster( 30, 32, "aeris",              AIR,   RARE,      {HEAL,          ALL, AIR, 2}, 20, 36, 28, 2, {TANK, 0.1}));
-    baseHeroes.push_back(Monster( 75,  2, "geum",               EARTH, LEGENDARY, {BERSERK,       SELF, EARTH, 2}, 213, 8, 22, 0.2, {ANGEL, 0.01}));
+    baseHeroes.push_back(Monster( 75,  2, "geum",               EARTH, LEGENDARY, {BERSERK,       SELF, EARTH, 2}, 213, 8, 22, 0.2, {AFFINITY, 0.15}));
     baseHeroes.push_back(Monster( 46, 16, "forestdruid",        EARTH, RARE,      {BUFF,          EARTH, EARTH, 4}, 38, 16, 19, 4, {DAMAGE, 0.11}));
     baseHeroes.push_back(Monster( 32, 24, "ignitor",            FIRE,  RARE,      {BUFF,          FIRE, FIRE, 4}, 24, 22, 23, 4, {DAMAGE, 0.11}));
     baseHeroes.push_back(Monster( 58, 14, "undine",             WATER, RARE,      {BUFF,          WATER, WATER, 4}, 25, 7, 15, 4, {DAMAGE, 0.11}));
